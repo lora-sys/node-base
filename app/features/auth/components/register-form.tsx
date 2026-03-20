@@ -50,8 +50,6 @@ const formSchema = z
 type FormData = z.infer<typeof formSchema>
 
 export function RegisterForm() {
-  const [password, setPassword] = React.useState("")
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -63,6 +61,7 @@ export function RegisterForm() {
   })
 
   const isPending = form.formState.isSubmitting
+  const password = form.watch("password")
 
   async function onSubmit(data: FormData) {
     await authClient.signUp.email(

@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import { usePasswordStrength } from "@/hooks/use-auth-form"
 
 interface PasswordStrengthIndicatorProps {

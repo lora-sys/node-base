@@ -29,7 +29,7 @@ import {
 
 const formSchema = z
   .object({
-    currentPassword: z.string().min(1, "Current password is required"),
+    currentPassword: z.string().min(1, FORM_MESSAGES.CURRENT_PASSWORD_REQUIRED),
     newPassword: z
       .string()
       .min(1, FORM_MESSAGES.PASSWORD_REQUIRED)
@@ -45,7 +45,6 @@ type FormData = z.infer<typeof formSchema>
 
 export function ChangePasswordForm() {
   const router = useRouter()
-  const [password, setPassword] = React.useState("")
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -57,6 +56,7 @@ export function ChangePasswordForm() {
   })
 
   const isPending = form.formState.isSubmitting
+  const password = form.watch("newPassword")
 
   async function onSubmit(data: FormData) {
     await authClient.changePassword(

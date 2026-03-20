@@ -1,32 +1,68 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
++import { auth } from "@/lib/auth";
++import { headers as getHeaders } from "next/headers";
 import {
   sendEmail,
   sendVerificationEmail,
   sendResetPasswordEmail,
 } from "@/lib/email"
 
-// 请求体验证 schema
-const sendEmailSchema = z.object({
-  type: z.enum(["custom", "verification", "reset-password"]).default("custom"),
+// 基础 schema
+const baseSchema = z.object({
   to: z.string().email("Invalid email address"),
-  subject: z.string().min(1).max(200).optional(),
-  html: z.string().optional(),
-  text: z.string().optional(),
-  // 验证邮件专用
-  userName: z.string().optional(),
-  verificationUrl: z.string().url().optional(),
-  // 重置密码邮件专用
-  resetUrl: z.string().url().optional(),
 })
 
+// 自定义邮件 schema
+const customEmailSchema = baseSchema.extend({
+  type: z.literal("custom"),
+  subject: z.string().min(1).max(200),
+  html: z.string(),
+  text: z.string().optional(),
+})
+
+// 验证邮件 schema
+const verificationEmailSchema = baseSchema.extend({
+  type: z.literal("verification"),
+  userName: z.string(),
+  verificationUrl: z.string().url(),
+})
+
+// 重置密码邮件 schema
+const resetPasswordEmailSchema = baseSchema.extend({
+  type: z.literal("reset-password"),
+  userName: z.string(),
+  resetUrl: z.string().url(),
+})
+
+// 请求体验证 schema（使用 discriminated union）
+const sendEmailSchema = z.discriminatedUnion("type", [
+  customEmailSchema,
+  verificationEmailSchema,
+  resetPasswordEmailSchema,
+])
+
 // 速率限制（简单内存实现，生产环境应使用 Redis）
+// TODO: Configure REDIS_URL environment variable to use Redis for rate limiting in production
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 const RATE_LIMIT_WINDOW = 60 * 1000 // 1 分钟
 const RATE_LIMIT_MAX = 5 // 每分钟最多 5 次
 
+// 检查是否使用 Redis（生产环境）
+const USE_REDIS = process.env.REDIS_URL !== undefined
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
+
+  // 只在 Map 较大时清理过期条目以避免性能问题
+  if (rateLimitMap.size > 100) {
+    for (const [key, record] of rateLimitMap.entries()) {
+      if (now > record.resetTime) {
+        rateLimitMap.delete(key)
+      }
+    }
+  }
+
   const record = rateLimitMap.get(ip)
 
   if (!record || now > record.resetTime) {
@@ -44,6 +80,18 @@ function checkRateLimit(ip: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+
+    // Verify the request is authenticated
+   const session = await auth.api.getSession({
+      headers: await getHeaders(),
+    });
+    if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
     // 获取客户端 IP
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0] ||
@@ -75,41 +123,23 @@ export async function POST(request: NextRequest) {
     // 根据类型发送不同邮件
     switch (data.type) {
       case "verification":
-        if (!data.userName || !data.verificationUrl) {
-          return NextResponse.json(
-            { error: "Missing userName or verificationUrl for verification email" },
-            { status: 400 }
-          )
-        }
         result = await sendVerificationEmail({
           to: data.to,
           userName: data.userName,
           verificationUrl: data.verificationUrl,
         })
         break
-
+    
       case "reset-password":
-        if (!data.userName || !data.resetUrl) {
-          return NextResponse.json(
-            { error: "Missing userName or resetUrl for reset password email" },
-            { status: 400 }
-          )
-        }
         result = await sendResetPasswordEmail({
           to: data.to,
           userName: data.userName,
           resetUrl: data.resetUrl,
         })
         break
-
+    
       case "custom":
       default:
-        if (!data.subject || !data.html) {
-          return NextResponse.json(
-            { error: "Missing subject or html for custom email" },
-            { status: 400 }
-          )
-        }
         result = await sendEmail({
           to: data.to,
           subject: data.subject,
@@ -118,7 +148,6 @@ export async function POST(request: NextRequest) {
         })
         break
     }
-
     if (!result.success) {
       return NextResponse.json(
         { error: result.error || "Failed to send email" },

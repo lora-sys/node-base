@@ -64,21 +64,22 @@ model Account {
 }
 
 model Verification {
-  id         String   @id
+  id         String    @id
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
 
+  @@unique([identifier, value])
   @@index([identifier])
   @@map("verification")
 }
 
 model RateLimit {
-	id String @id
-	key String @unique
-	count Int
-	lastRequest BigInt
-	@@map("rateLimit")
+  id  String @id
+  key String @unique
+  count Int
+  lastRequest BigInt
+  @@map("rateLimit")
 }

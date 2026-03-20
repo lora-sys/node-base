@@ -20,6 +20,4 @@ export const requireUnauth = async () => {
   if (session) {
     redirect("/");
   }
-
-  return session;
 };

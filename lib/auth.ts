@@ -4,6 +4,23 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./db";
 import { sendVerificationEmail, sendResetPasswordEmail } from "./email";
 
+// 环境变量验证辅助函数（仅在生产环境强制验证）
+function getEnvOrWarn(name: string, requiredInProd = true): string | undefined {
+  const value = process.env[name];
+  const isProd = process.env.NODE_ENV === "production";
+  
+  if (!value) {
+    if (requiredInProd && isProd) {
+      throw new Error(`Missing required environment variable: ${name}`);
+    }
+    if (!isProd) {
+      console.warn(`⚠️  Missing environment variable: ${name} (social login will be disabled)`);
+    }
+    return undefined;
+  }
+  return value;
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -27,18 +44,21 @@ export const auth = betterAuth({
 
     // 发送重置密码邮件
     sendResetPassword: async ({ user, url }, request) => {
-      console.log("Reset password URL generated:", url);
-      console.log("Reset password user:", user.email);
-      void sendResetPasswordEmail({
-        to: user.email,
-        userName: user.name,
-        resetUrl: url,
-      });
+      try {
+        await sendResetPasswordEmail({
+          to: user.email,
+          userName: user.name,
+          resetUrl: url,
+        });
+      } catch (error) {
+        console.error("Failed to send reset password email:", (error as Error).message);
+        // 不要重新抛出错误，避免影响用户体验
+      }
     },
 
     // 密码重置成功后的回调
     onPasswordReset: async ({ user }, request) => {
-      console.log(`Password reset successfully for user ${user.email}`);
+      console.log(`Password reset successfully for user`);
     },
 
     // Token 过期时间（1小时）
@@ -53,14 +73,17 @@ export const auth = betterAuth({
   // 邮箱验证配置
   emailVerification: {
     // 发送验证邮件
-    sendVerificationEmail: async ({ user, url, token }, request) => {
-      console.log("Verification URL generated:", url);
-      console.log("Verification token:", token);
-      void sendVerificationEmail({
-        to: user.email,
-        userName: user.name,
-        verificationUrl: url,
-      });
+    sendVerificationEmail: async ({ user, url }, request) => {
+      try {
+        await sendVerificationEmail({
+          to: user.email,
+          userName: user.name,
+          verificationUrl: url,
+        });
+      } catch (error) {
+        console.error("Failed to send verification email:", (error as Error).message);
+        // 不要重新抛出错误，避免影响用户体验
+      }
     },
     // 注册后自动发送验证邮件
     sendOnSignUp: false,
@@ -72,14 +95,18 @@ export const auth = betterAuth({
 
   // OAuth 社交登录
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    },
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-    },
+    ...(getEnvOrWarn("GOOGLE_CLIENT_ID") && getEnvOrWarn("GOOGLE_CLIENT_SECRET") ? {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      },
+    } : {}),
+    ...(getEnvOrWarn("GITHUB_CLIENT_ID") && getEnvOrWarn("GITHUB_CLIENT_SECRET") ? {
+      github: {
+        clientId: process.env.GITHUB_CLIENT_ID!,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      },
+    } : {}),
   },
 
   // Rate Limiting 配置

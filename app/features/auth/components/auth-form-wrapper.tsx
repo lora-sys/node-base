@@ -1,11 +1,12 @@
 import * as React from "react"
 import { SocialLoginButtons, SocialLoginType } from "./social-login-buttons"
+import { SocialProvider } from "../constants"
 
 interface AuthFormWrapperProps {
   children: React.ReactNode
   showSocialLogin?: boolean
   socialLoginType?: SocialLoginType
-  onSocialLogin?: (provider: "github" | "google") => void
+  onSocialLogin?: (provider: SocialProvider) => void
   isPending?: boolean
 }
 

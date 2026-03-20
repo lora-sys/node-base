@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
 import { Loader2, Lock, CheckCircle2, RefreshCw } from "lucide-react"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -52,20 +53,22 @@ interface ResetPasswordFormProps {
 export function ResetPasswordForm({ token, error, onInvalidToken }: ResetPasswordFormProps) {
   const router = useRouter()
 
-  const [tokenStatus, setTokenStatus] = React.useState<"checking" | "valid" | "invalid">("checking")
-  const [password, setPassword] = React.useState("")
+  const invalidCallbackRef = React.useRef(onInvalidToken)
+  invalidCallbackRef.current = onInvalidToken
+
+  const [tokenStatus, setTokenStatus] = React.useState<"checking" | "valid" | "invalid">(
+    error ? "invalid" : token ? "valid" : "checking"
+  )
 
   React.useEffect(() => {
-    if (error) {
-      setTokenStatus("invalid")
-      onInvalidToken?.()
-    } else if (token) {
-      setTokenStatus("valid")
-    } else {
-      setTokenStatus("invalid")
-      onInvalidToken?.()
+    const newStatus = error ? "invalid" : token ? "valid" : "invalid"
+    if (newStatus !== tokenStatus) {
+      setTokenStatus(newStatus)
+      if (newStatus === "invalid") {
+        invalidCallbackRef.current?.()
+      }
     }
-  }, [token, error, onInvalidToken])
+  }, [token, error, tokenStatus])
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -76,6 +79,7 @@ export function ResetPasswordForm({ token, error, onInvalidToken }: ResetPasswor
   })
 
   const isPending = form.formState.isSubmitting
+  const password = form.watch("password")
 
   async function onSubmit(data: FormData) {
     if (!token) {
@@ -109,6 +113,24 @@ export function ResetPasswordForm({ token, error, onInvalidToken }: ResetPasswor
     )
   }
 
+  if (tokenStatus === "checking") {
+    return (
+      <AuthCard
+        title={FORM_MESSAGES.RESET_PASSWORD_TITLE}
+        description={FORM_MESSAGES.RESET_PASSWORD_DESCRIPTION}
+        footer={
+          <div className="flex justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        }
+      >
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center text-muted-foreground">Validating reset token...</div>
+        </div>
+      </AuthCard>
+    )
+  }
+
   if (tokenStatus === "invalid") {
     return (
       <AuthCard
@@ -119,10 +141,10 @@ export function ResetPasswordForm({ token, error, onInvalidToken }: ResetPasswor
             asChild
             className={BUTTON_PRIMARY_CLASSES}
           >
-            <a href="/forgot-password">
+            <Link href="/forgot-password">
               <RefreshCw className="mr-2 h-4 w-4" />
               {FORM_MESSAGES.REQUEST_NEW_LINK}
-            </a>
+            </Link>
           </Button>
         }
       />
@@ -134,21 +156,38 @@ export function ResetPasswordForm({ token, error, onInvalidToken }: ResetPasswor
       title={FORM_MESSAGES.RESET_PASSWORD_TITLE}
       description={FORM_MESSAGES.RESET_PASSWORD_DESCRIPTION}
       footer={
-        <Button
-          type="submit"
-          form="reset-password-form"
-          className={BUTTON_PRIMARY_CLASSES}
-          disabled={isPending}
-        >
-          {isPending ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {FORM_MESSAGES.RESETTING}
-            </span>
-          ) : (
-            FORM_MESSAGES.RESET_PASSWORD
-          )}
-        </Button>
+        <>
+          <Button
+            type="submit"
+            form="reset-password-form"
+            className={BUTTON_PRIMARY_CLASSES}
+            disabled={isPending}
+          >
+            {isPending ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {FORM_MESSAGES.RESETTING}
+              </span>
+            ) : (
+              FORM_MESSAGES.RESET_PASSWORD
+            )}
+          </Button>
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <Link
+              href="/forgot-password"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Request new link
+            </Link>
+            <span>•</span>
+            <Link
+              href="/login"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Sign in
+            </Link>
+          </div>
+        </>
       }
     >
       <AuthFormWrapper showSocialLogin={false}>

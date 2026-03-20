@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react"
+import type { z } from "zod"
 
 /**
  * 密码强度检查
@@ -55,7 +56,7 @@ export function useTokenValidation(token: string | null) {
   const hasToken = Boolean(token)
 
   return {
-    status: hasToken ? "valid" : "invalid",
+    status,
     hasToken,
     setStatus,
   }
@@ -89,17 +90,27 @@ export function useFormSubmitStatus() {
 /**
  * 表单字段验证状态
  */
-export function useFormValidation<T extends Record<string, any>>(schema: any) {
+export function useFormValidation<T extends Record<string, any>, S extends z.ZodType<T>>(schema: S) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
   const validateField = (name: keyof T, value: any) => {
     try {
-      // 这里可以添加 Zod 验证逻辑
+      // 使用 schema 进行字段级验证
+      const fieldSchema = schema.shape?.[name]
+      if (fieldSchema) {
+        const result = fieldSchema.safeParse(value)
+        if (!result.success) {
+          const errorMessage = result.error.errors[0]?.message || "Invalid value"
+          setErrors((prev) => ({ ...prev, [name as string]: errorMessage }))
+          return false
+        }
+      }
       setErrors((prev) => ({ ...prev, [name as string]: "" }))
       return true
     } catch (err: any) {
-      setErrors((prev) => ({ ...prev, [name as string]: err.message }))
+      const errorMessage = err.message || "Invalid value"
+      setErrors((prev) => ({ ...prev, [name as string]: errorMessage }))
       return false
     }
   }

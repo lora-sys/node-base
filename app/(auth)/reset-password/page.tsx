@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 
@@ -23,7 +22,7 @@ export default function ResetPasswordPage() {
             credentials: "include",
           },
         })
-        if (session) {
+        if (session.data) {
           router.push("/")
         }
       } catch (error) {
@@ -49,21 +48,6 @@ export default function ResetPasswordPage() {
   return (
     <AuthBackground>
       <ResetPasswordForm token={token} error={error} />
-      <div className="flex gap-4 text-sm text-muted-foreground mt-4">
-        <Link
-          href="/forgot-password"
-          className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-        >
-          Request new link
-        </Link>
-        <span>•</span>
-        <Link
-          href="/login"
-          className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-        >
-          Sign in
-        </Link>
-      </div>
     </AuthBackground>
   )
 }

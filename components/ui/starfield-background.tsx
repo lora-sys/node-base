@@ -43,13 +43,20 @@ export function StarfieldBackground({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    // Check for prefers-reduced-motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const dpr = window.devicePixelRatio || 1
     const rect = container.getBoundingClientRect()
     let width = rect.width
     let height = rect.height
-    canvas.width = width
-    canvas.height = height
+    canvas.width = Math.round(width * dpr)
+    canvas.height = Math.round(height * dpr)
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
+    ctx.scale(dpr, dpr)
 
-    let animationId: number
+    let animationId: number | null = null
     let tick = 0
 
     const centerX = width / 2
@@ -72,12 +79,50 @@ export function StarfieldBackground({
       const rect = container.getBoundingClientRect()
       width = rect.width
       height = rect.height
-      canvas.width = width
-      canvas.height = height
+      canvas.width = Math.round(width * dpr)
+      canvas.height = Math.round(height * dpr)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      ctx.scale(dpr, dpr)
     }
 
     const ro = new ResizeObserver(handleResize)
     ro.observe(container)
+
+    // Draw single frame (for reduced motion)
+    const drawFrame = () => {
+      ctx.fillStyle = "#0a0a0f"
+      ctx.fillRect(0, 0, width, height)
+
+      const cx = width / 2
+      const cy = height / 2
+
+      for (const star of stars) {
+        // Project to 2D
+        const scale = 400 / star.z
+        const x = cx + star.x * scale
+        const y = cy + star.y * scale
+
+        // Skip if off screen
+        if (x < -10 || x > width + 10 || y < -10 || y > height + 10) continue
+
+        // Size based on depth (closer = bigger)
+        const size = Math.max(0.5, (1 - star.z / maxDepth) * 3)
+
+        // Opacity based on depth (closer = brighter)
+        const opacity = (1 - star.z / maxDepth) * 0.9 + 0.1
+
+        // Draw star
+        ctx.beginPath()
+        ctx.arc(x, y, size, 0, Math.PI * 2)
+        ctx.fillStyle = starColor
+        ctx.globalAlpha = opacity
+        ctx.fill()
+      }
+
+      // Reset global alpha
+      ctx.globalAlpha = 1
+    }
 
     // Animation
     const animate = () => {
@@ -149,10 +194,18 @@ export function StarfieldBackground({
     ctx.fillStyle = "#0a0a0f"
     ctx.fillRect(0, 0, width, height)
 
-    animationId = requestAnimationFrame(animate)
+    if (prefersReducedMotion) {
+      // Draw single static frame for reduced motion
+      drawFrame()
+    } else {
+      // Start animation loop
+      animationId = requestAnimationFrame(animate)
+    }
 
     return () => {
-      cancelAnimationFrame(animationId)
+      if (animationId !== null) {
+        cancelAnimationFrame(animationId)
+      }
       ro.disconnect()
     }
   }, [count, speed, starColor, twinkle])

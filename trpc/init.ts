@@ -3,7 +3,10 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  return { userId: "user_123" };
+  const session = await auth.api.getSession({
+    headers: opts.headers,
+  });
+  return { userId: session?.user?.id };
 };
 
 const t = initTRPC

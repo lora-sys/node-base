@@ -38,6 +38,7 @@ export const FORM_MESSAGES = {
   NAME_MIN_LENGTH: "Name must be at least 2 characters",
   CONFIRM_PASSWORD_REQUIRED: "Please confirm your password",
   PASSWORDS_DO_NOT_MATCH: "Passwords do not match",
+  CURRENT_PASSWORD_REQUIRED: "Current password is required",
 
   // Success messages
   LOGIN_SUCCESS: "Logged in successfully!",
