@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "HTTP_PROXY=http://192.168.3.85:7897 HTTPS_PROXY=http://192.168.3.85:7897 NODE_OPTIONS=\"--use-env-proxy\" next dev",
+    "dev": "next dev",
+    "dev:proxy": "HTTP_PROXY=http://192.168.3.85:7897 HTTPS_PROXY=http://192.168.3.85:7897 NODE_OPTIONS=\"--use-env-proxy\" next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

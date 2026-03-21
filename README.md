@@ -18,6 +18,28 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+### Development with Proxy
+
+If you need to use a proxy for development (e.g., in regions with network restrictions), you have two options:
+
+1. **Use the proxy script** (recommended for quick testing):
+   ```bash
+   bun run dev:proxy
+   # or
+   npm run dev:proxy
+   ```
+
+2. **Configure via `.env.local`** (recommended for persistent setup):
+   Create a `.env.local` file in the project root with:
+   ```bash
+   HTTP_PROXY=http://your-proxy-address:port
+   HTTPS_PROXY=http://your-proxy-address:port
+   NODE_OPTIONS=--use-env-proxy
+   ```
+   Then run the normal `bun run dev` command.
+
+**Note:** The default `dev` script does not include any hard-coded proxy configuration to ensure portability across different development environments.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
