@@ -1,11 +1,11 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/inngest/client";
-import { helloWorld } from "@/inngest/functions";
+import { execute } from "@/inngest/functions";
 
 // Create an API that serves registered Inngest functions
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
-    helloWorld,
+    execute
   ],
 });

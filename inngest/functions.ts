@@ -1,28 +1,42 @@
-import prisma from "@/lib/db";
+
 import { inngest } from "./client";
+import { generateText } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { sleep } from "@trpc/server/unstable-core-do-not-import";
+import {createOpenAI} from "@ai-sdk/openai"
+import {createAnthropic} from "@ai-sdk/anthropic"
+const google = createGoogleGenerativeAI({
+  apiKey : process.env.GOOGLE_GENERATIVE_AI_API_KEY
+})
+const openai = createOpenAI(
+  {
+    apiKey : process.env.OPENAI_API_KEY
+  }
+)
+const anthropic = createAnthropic()
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world", triggers: [{ event: "test/hello.world" }] },
+export const execute = inngest.createFunction(
+  { id: "execute-ai", triggers: [{ event: "execute/ai" }] },
   async ({ event, step }) => {
-    await step.sleep("fetching", "5s");
+    await step.sleep("pretend","5s")
 
-    await step.sleep("wait-a-moment", "5s");
-    await step.sleep("send-to-ai", "5s");
+   const {steps : geminiSteps } = await step.ai.wrap("gemini-generate-text",
+    generateText ,{
+      model : google("gemini-2.5-flash"),
+      system : "You are a helpful assiant",
+      prompt : "What is 2+2",
 
-    const name = event.data?.name ?? "test-workflow";
-    const userId = event.data?.userId;
+    }
+   )
+  //   const {steps : openaiSteps } = await step.ai.wrap("openai-generate-text",
+  //   generateText ,{
+  //     model : openai("gpt-4.1-mini"),
+  //     system : "You are a helpful assiant",
+  //     prompt : "What is 2+2",
 
-    // Wrap DB operation in step.run for idempotency on retries
-    return step.run("create-workflow:" + name, async () => {
-      // Note: Workflow model doesn't have userId field yet.
-      // When ownership tracking is needed, add userId to Workflow model
-      // and include it in the create call: { data: { name, userId } }
-      console.log(`Creating workflow for user ${userId ?? "unknown"}`);
-      return prisma.workflow.create({
-        data: {
-          name,
-        },
-      });
-    });
+  //   }
+  //  )
+  return geminiSteps
+
   },
 );
