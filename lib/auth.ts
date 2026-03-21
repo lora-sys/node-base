@@ -39,26 +39,29 @@ function maskEmail(email: string): string {
 	return `${userPart}***${domain}`;
 }
 
+// Compute baseURL before calling betterAuth
+const baseURLDevFallback = "http://localhost:3000";
+const baseURL =
+	process.env.BETTER_AUTH_URL ||
+	process.env.NEXT_PUBLIC_APP_URL ||
+	(process.env.NODE_ENV === "production"
+		? (() => {
+				throw new Error(
+					"Missing BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL in production",
+				);
+			})()
+		: baseURLDevFallback);
+
 export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 	}),
 
 	// 基础 URL 配置
-	const baseURLDevFallback = "http://localhost:3000";
-	const baseURL =
-		process.env.BETTER_AUTH_URL ||
-		process.env.NEXT_PUBLIC_APP_URL ||
-		(process.env.NODE_ENV === "production"
-			? (() => {
-					throw new Error(
-						"Missing BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL in production",
-					);
-				})()
-			: baseURLDevFallback);
+	baseURL: baseURL,
 
 	// 信任的来源（用于 CSRF 保护）
-	trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
+	trustedOrigins: [baseURL],
 
 	// 邮箱密码认证
 	emailAndPassword: {

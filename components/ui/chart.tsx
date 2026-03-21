@@ -52,6 +52,7 @@ function ChartContainer({
 	return (
 		<ChartContext.Provider value={{ config }}>
 			<div
+				id={id}
 				data-slot="chart"
 				data-chart={chartId}
 				className={cn(
@@ -78,26 +79,39 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 		return null;
 	}
 
-	// Validate color format (hex, rgb, rgba, hsl, hsla, or CSS color keywords)
+	// Simple server-safe escape for CSS identifiers
+	const simpleEscape = (str: string): string => {
+		if (typeof window === "undefined") {
+			// Server-side: basic escaping for common problematic chars
+			return str.replace(/([:#\[\](){}"',.;>+~])/g, "\\$1");
+		}
+		// Client-side: use native CSS.escape if available
+		return typeof CSS !== "undefined" && CSS.escape ? CSS.escape(str) : simpleEscape(str);
+	};
+
+	// Validate color format (hex, rgb, rgba, hsl, hsla, CSS variables, or CSS color keywords)
 	const isValidColor = (color: string) => {
 		// Hex: #fff, #ffffff, #f00, #ff0000
 		if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color)) return true;
-		// rgb/rgba: rgb(0,0,0) or rgba(0,0,0,0.5)
-		if (/^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?\)$/.test(color)) return true;
-		// hsl/hsla: hsl(0, 50%, 50%) or hsla(0, 50%, 50%, 0.5)
-		if (/^hsla?\(\s*\d+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*(,\s*[\d.]+\s*)?\)$/.test(color)) return true;
-		// CSS color keywords (red, blue, etc.) - limited set
+		// rgb/rgba with comma or space separation, optional slash alpha
+		// Examples: rgb(0 0 0), rgb(0, 0, 0), rgba(0 0 0 / 0.5), rgba(0,0,0,0.5)
+		if (/^rgba?\(\s*\d+\s*(?:,|\s)\s*\d+\s*(?:,|\s)\s*\d+\s*(?:(?:,\s*[\d.]+\s*)|(?:\s*\/\s*[\d.]+\s*))?\)$/.test(color)) return true;
+		// hsl/hsla with comma or space separation, optional slash alpha
+		// Examples: hsl(120 75% 25%), hsl(120, 75%, 25%), hsla(120 75% 25% / 0.5)
+		if (/^hsla?\(\s*\d+\s*(?:,|\s)\s*[\d.]+\s*%\s*(?:,|\s)\s*[\d.]+\s*%\s*(?:(?:,\s*[\d.]+\s*)|(?:\s*\/\s*[\d.]+\s*))?\)$/.test(color)) return true;
+		// CSS custom properties: var(--name) or var(--name, fallback)
+		if (/^var\(\s*--[a-zA-Z0-9_-]+\s*(?:,\s*[^)]+)?\)$/.test(color)) return true;
+		// CSS color keywords (limited set)
 		if (/^(black|white|red|green|blue|yellow|cyan|magenta|gray|grey|orange|purple|pink|brown|indigo|teal|emerald|sky|rose|violet|fuchsia|lime|stone|zinc|neutral|slate|azure|accent|primary|secondary|background|foreground|muted|destructive|success|warning|error|info)$/i.test(color)) return true;
 		return false;
 	};
 
-	return (
-		<style
-			dangerouslySetInnerHTML={{
-				__html: Object.entries(THEMES)
-					.map(
-						([theme, prefix]) => `
-${prefix} [data-chart=${CSS.escape(id)}] {
+	// Build CSS on server or client
+	const buildCSS = () => {
+		return Object.entries(THEMES)
+			.map(
+				([theme, prefix]) => `
+${prefix} [data-chart=${simpleEscape(id)}] {
 ${colorConfig
 	.map(([key, itemConfig]) => {
 		const color =
@@ -109,14 +123,32 @@ ${colorConfig
 			console.warn(`Invalid color format for chart key "${key}": ${color}`);
 			return null;
 		}
-		return `  --color-${CSS.escape(key)}: ${color};`;
+		return `  --color-${simpleEscape(key)}: ${color};`;
 	})
 	.filter(Boolean)
 	.join("\n")}
 }
 `,
-					)
-					.join("\n"),
+			)
+			.join("\n");
+	};
+
+	// Use useEffect to defer style injection to client if needed
+	const [css, setCss] = React.useState<string | null>(null);
+
+	React.useEffect(() => {
+		setCss(buildCSS());
+	}, []);
+
+	// During SSR, return empty style tag (no CSS.escape called)
+	if (css === null && typeof window === "undefined") {
+		return <style />;
+	}
+
+	return (
+		<style
+			dangerouslySetInnerHTML={{
+				__html: css || buildCSS(),
 			}}
 		/>
 	);

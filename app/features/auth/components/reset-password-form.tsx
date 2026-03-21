@@ -118,7 +118,9 @@ export function ResetPasswordForm({
 		);
 	}
 
-	return (
+	// Conditional render based on token status
+	if (tokenStatus === "invalid") {
+		return (
 			<AuthCard
 				title={FORM_MESSAGES.INVALID_LINK}
 				description={FORM_MESSAGES.INVALID_LINK_DESCRIPTION}
