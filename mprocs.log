@@ -6,3 +6,17 @@ ERROR [lib::proc::proc] Process read() error: Input/output error (os error 5)
 ERROR [lib::proc::proc] Process read() error: Input/output error (os error 5)
 ERROR [lib::proc::proc] Process read() error: Input/output error (os error 5)
 ERROR [lib::proc::proc] Process read() error: Input/output error (os error 5)
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::mprocs] Got panic. @info:panicked at src/key.rs:369:50:
+byte index 2 is not a char boundary; it is inside '：' (bytes 1..4) of `<：>`
+@stackTrace:disabled backtrace
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::proc::proc] Process read() error: I/O error (os error 5)
+ERROR [lib::mprocs] Got panic. @info:panicked at src/vt100/screen.rs:438:10:
+called `Option::unwrap()` on a `None` value
+@stackTrace:disabled backtrace

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "HTTP_PROXY=http://192.168.3.85:7897 HTTPS_PROXY=http://192.168.3.85:7897 NODE_OPTIONS=\"--use-env-proxy\" next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -12,6 +12,9 @@
     "dev:all": "mprocs"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.63",
+    "@ai-sdk/google": "^3.0.52",
+    "@ai-sdk/openai": "^3.0.47",
     "@base-ui/react": "^1.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-neon": "^7.5.0",
@@ -20,6 +23,7 @@
     "@trpc/client": "^11.13.4",
     "@trpc/server": "^11.13.4",
     "@trpc/tanstack-react-query": "^11.13.4",
+    "ai": "^6.0.134",
     "better-auth": "^1.5.5",
     "class-variance-authority": "^0.7.1",
     "client-only": "^0.0.1",
