@@ -28,10 +28,10 @@ function getDisplayName(user: { name?: string | null; email?: string | null }): 
 	return user.name ?? user.email ?? "there";
 }
 
-// 简单的 email hash（用于日志脱敏）
-function hashEmail(email: string): string {
+// 简单的 email mask（用于日志脱敏）
+function maskEmail(email: string): string {
 	if (!email) return "unknown";
-	// 简单的 hash：取前2个字符 + 域名部分
+	// 简单的 mask：取前2个字符 + 域名部分
 	const atIndex = email.indexOf("@");
 	if (atIndex <= 0) return "***";
 	const userPart = email.substring(0, Math.min(2, atIndex));
@@ -45,10 +45,17 @@ export const auth = betterAuth({
 	}),
 
 	// 基础 URL 配置
-	baseURL:
+	const baseURLDevFallback = "http://localhost:3000";
+	const baseURL =
 		process.env.BETTER_AUTH_URL ||
 		process.env.NEXT_PUBLIC_APP_URL ||
-		"http://localhost:3000",
+		(process.env.NODE_ENV === "production"
+			? (() => {
+					throw new Error(
+						"Missing BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL in production",
+					);
+				})()
+			: baseURLDevFallback);
 
 	// 信任的来源（用于 CSRF 保护）
 	trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
@@ -71,7 +78,7 @@ export const auth = betterAuth({
 
 			if (!result.success) {
 				const errorMsg = result.error || "Failed to send reset password email";
-				console.error(errorMsg, { userId: user.id, emailHash: hashEmail(user.email) });
+				console.error(errorMsg, { userId: user.id, emailHash: maskEmail(user.email) });
 				throw new Error(errorMsg);
 			}
 		},
@@ -102,7 +109,7 @@ export const auth = betterAuth({
 
 			if (!result.success) {
 				const errorMsg = result.error || "Failed to send verification email";
-				console.error(errorMsg, { userId: user.id, emailHash: hashEmail(user.email) });
+				console.error(errorMsg, { userId: user.id, emailHash: maskEmail(user.email) });
 				throw new Error(errorMsg);
 			}
 		},
@@ -116,7 +123,7 @@ export const auth = betterAuth({
 
 	// OAuth 社交登录
 	socialProviders: {
-		...(getEnvOrWarn("GOOGLE_CLIENT_ID") && getEnvOrWarn("GOOGLE_CLIENT_SECRET")
+		...(getEnvOrWarn("GOOGLE_CLIENT_ID", false) && getEnvOrWarn("GOOGLE_CLIENT_SECRET", false)
 			? {
 					google: {
 						clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -124,7 +131,7 @@ export const auth = betterAuth({
 					},
 				}
 			: {}),
-		...(getEnvOrWarn("GITHUB_CLIENT_ID") && getEnvOrWarn("GITHUB_CLIENT_SECRET")
+		...(getEnvOrWarn("GITHUB_CLIENT_ID", false) && getEnvOrWarn("GITHUB_CLIENT_SECRET", false)
 			? {
 					github: {
 						clientId: process.env.GITHUB_CLIENT_ID!,

@@ -68,7 +68,6 @@ export function ResetPasswordForm({
 	React.useEffect(() => {
 		const newStatus = error ? "invalid" : token ? "valid" : "invalid";
 		setTokenStatus(newStatus);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [token, error]);
 
 	// Trigger invalid callback when tokenStatus becomes invalid
@@ -93,7 +92,6 @@ export function ResetPasswordForm({
 		if (!token) {
 			toast.error(FORM_MESSAGES.INVALID_TOKEN);
 			setTokenStatus("invalid");
-			onInvalidToken?.();
 			return;
 		}
 
@@ -111,7 +109,6 @@ export function ResetPasswordForm({
 					const errorMsg = ctx.error.message?.toLowerCase() || "";
 					if (errorMsg.includes("expired") || errorMsg.includes("invalid")) {
 						setTokenStatus("invalid");
-						onInvalidToken?.();
 						toast.error(FORM_MESSAGES.TOKEN_EXPIRED);
 					} else {
 						toast.error(ctx.error.message);
@@ -121,15 +118,7 @@ export function ResetPasswordForm({
 		);
 	}
 
-	// tokenStatus is computed at initialization; if invalid, trigger callback once
-	React.useEffect(() => {
-		if (tokenStatus === "invalid") {
-			invalidCallbackRef.current?.();
-		}
-	}, [tokenStatus]);
-
-	if (tokenStatus === "invalid") {
-		return (
+	return (
 			<AuthCard
 				title={FORM_MESSAGES.INVALID_LINK}
 				description={FORM_MESSAGES.INVALID_LINK_DESCRIPTION}
