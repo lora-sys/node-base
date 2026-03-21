@@ -14,8 +14,9 @@ const Page = () => {
 	const create = useMutation(
 		trpc.createWorkflow.mutationOptions({
 			onSuccess: () => {
-				// // Invalidate the getWorkflows query to trigger a refetch
-				// queryClient.invalidateQueries(trpc.getWorkflows.queryOptions())
+				queryClient.invalidateQueries({
+					queryKey: trpc.getWorkflows.queryOptions().queryKey,
+				});
 				toast.success("Job queued");
 			},
 		}),
