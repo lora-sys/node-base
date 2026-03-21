@@ -64,16 +64,19 @@ export function ResetPasswordForm({
 		"checking" | "valid" | "invalid"
 	>(error ? "invalid" : token ? "valid" : "invalid");
 
+	// Sync tokenStatus when props change (derived state pattern)
 	React.useEffect(() => {
 		const newStatus = error ? "invalid" : token ? "valid" : "invalid";
-		if (newStatus !== tokenStatus) {
-			setTokenStatus(newStatus);
-			if (newStatus === "invalid") {
-				invalidCallbackRef.current?.();
-			}
-		}
+		setTokenStatus(newStatus);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [token, error]);
+
+	// Trigger invalid callback when tokenStatus becomes invalid
+	React.useEffect(() => {
+		if (tokenStatus === "invalid") {
+			invalidCallbackRef.current?.();
+		}
+	}, [tokenStatus]);
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
@@ -118,25 +121,12 @@ export function ResetPasswordForm({
 		);
 	}
 
-	if (tokenStatus === "checking") {
-		return (
-			<AuthCard
-				title={FORM_MESSAGES.RESET_PASSWORD_TITLE}
-				description={FORM_MESSAGES.RESET_PASSWORD_DESCRIPTION}
-				footer={
-					<div className="flex justify-center">
-						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-					</div>
-				}
-			>
-				<div className="flex items-center justify-center py-8">
-					<div className="text-center text-muted-foreground">
-						Validating reset token...
-					</div>
-				</div>
-			</AuthCard>
-		);
-	}
+	// tokenStatus is computed at initialization; if invalid, trigger callback once
+	React.useEffect(() => {
+		if (tokenStatus === "invalid") {
+			invalidCallbackRef.current?.();
+		}
+	}, [tokenStatus]);
 
 	if (tokenStatus === "invalid") {
 		return (

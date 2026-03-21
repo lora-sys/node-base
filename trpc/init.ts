@@ -20,6 +20,7 @@ const t = initTRPC
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
+export { TRPCError }; // 导出 TRPCError 供其他模块使用
 
 // 获取 session 类型
 type Session = Awaited<ReturnType<typeof auth.api.getSession>>;

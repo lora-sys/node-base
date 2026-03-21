@@ -1,4 +1,4 @@
-import { createTRPCRouter, protectedProcedure } from "../init";
+import { createTRPCRouter, protectedProcedure, TRPCError } from "../init";
 import prisma from "@/lib/db";
 import { makeQueryClient } from "../query-client";
 import { cache } from "react";
@@ -11,7 +11,10 @@ export const appRouter = createTRPCRouter({
   createWorkflow: protectedProcedure.mutation(async ({ ctx }) => {
     const email = ctx.auth.user.email;
     if (!email || typeof email !== "string") {
-      throw new Error("User email is required");
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "User email is required",
+      });
     }
     await inngest.send({
       name: "test/hello.world",

@@ -84,8 +84,8 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 		if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color)) return true;
 		// rgb/rgba: rgb(0,0,0) or rgba(0,0,0,0.5)
 		if (/^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?\)$/.test(color)) return true;
-		// hsl/hsla: hsl(0,0%,0%) or hsla(0,0%,0%,0.5)
-		if (/^hsla?\(\s*\d+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\)$/.test(color)) return true;
+		// hsl/hsla: hsl(0, 50%, 50%) or hsla(0, 50%, 50%, 0.5)
+		if (/^hsla?\(\s*\d+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*(,\s*[\d.]+\s*)?\)$/.test(color)) return true;
 		// CSS color keywords (red, blue, etc.) - limited set
 		if (/^(black|white|red|green|blue|yellow|cyan|magenta|gray|grey|orange|purple|pink|brown|indigo|teal|emerald|amber|sky|rose|violet|fuchsia|amber|lime|yellow|stone|zinc|neutral|slate|azure|cyan|accent|primary|secondary|background|foreground|muted|destructive|success|warning|error|info)$/i.test(color)) return true;
 		return false;

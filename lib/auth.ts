@@ -23,6 +23,22 @@ function getEnvOrWarn(name: string, requiredInProd = true): string | undefined {
 	return value;
 }
 
+// 安全获取用户显示名称（避免 null/undefined）
+function getDisplayName(user: { name?: string | null; email?: string | null }): string {
+	return user.name ?? user.email ?? "there";
+}
+
+// 简单的 email hash（用于日志脱敏）
+function hashEmail(email: string): string {
+	if (!email) return "unknown";
+	// 简单的 hash：取前2个字符 + 域名部分
+	const atIndex = email.indexOf("@");
+	if (atIndex <= 0) return "***";
+	const userPart = email.substring(0, Math.min(2, atIndex));
+	const domain = email.substring(atIndex);
+	return `${userPart}***${domain}`;
+}
+
 export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
@@ -49,13 +65,13 @@ export const auth = betterAuth({
 		sendResetPassword: async ({ user, url }, request) => {
 			const result = await sendResetPasswordEmail({
 				to: user.email,
-				userName: user.name,
+				userName: getDisplayName(user),
 				resetUrl: url,
 			});
 
 			if (!result.success) {
 				const errorMsg = result.error || "Failed to send reset password email";
-				console.error(errorMsg, { userId: user.id, email: user.email });
+				console.error(errorMsg, { userId: user.id, emailHash: hashEmail(user.email) });
 				throw new Error(errorMsg);
 			}
 		},
@@ -80,13 +96,13 @@ export const auth = betterAuth({
 		sendVerificationEmail: async ({ user, url }, request) => {
 			const result = await sendVerificationEmail({
 				to: user.email,
-				userName: user.name,
+				userName: getDisplayName(user),
 				verificationUrl: url,
 			});
 
 			if (!result.success) {
 				const errorMsg = result.error || "Failed to send verification email";
-				console.error(errorMsg, { userId: user.id, email: user.email });
+				console.error(errorMsg, { userId: user.id, emailHash: hashEmail(user.email) });
 				throw new Error(errorMsg);
 			}
 		},
