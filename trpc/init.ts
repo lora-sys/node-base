@@ -6,33 +6,34 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   const session = await auth.api.getSession({
     headers: opts.headers,
   });
-  return { userId: session?.user?.id };
+  return {
+    session,
+    userId: session?.user?.id,
+  };
 };
 
 const t = initTRPC
-  .context<Awaited<ReturnType<typeof createTRPCContext>>>()
-  .create({});
+	.context<Awaited<ReturnType<typeof createTRPCContext>>>()
+	.create({});
 
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
+export { TRPCError }; // 导出 TRPCError 供其他模块使用
 
 // 获取 session 类型
 type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
 
 // 扩展上下文类型
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session) {
+  if (!ctx.session) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Unauthorized" });
   }
   return next({
     ctx: {
       ...ctx,
-      auth: session,
+      auth: ctx.session,
     } as typeof ctx & { auth: NonNullable<Session> },
   });
 });

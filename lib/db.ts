@@ -2,7 +2,7 @@ import { PrismaClient } from "./generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 const globalForPrisma = global as unknown as {
-    prisma: PrismaClient;
+	prisma: PrismaClient;
 };
 
 // 为什么要使用全局变量？
@@ -14,7 +14,7 @@ const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
 const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = prisma;
+	globalForPrisma.prisma = prisma;
 }
 
 export default prisma;

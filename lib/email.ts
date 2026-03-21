@@ -1,91 +1,101 @@
-import { Resend } from "resend"
+import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface SendEmailOptions {
-  to: string
-  subject: string
-  html: string
-  text?: string
+	to: string;
+	subject: string;
+	html: string;
+	text?: string;
 }
 
 // HTML 转义函数
 function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  }
-  return text.replace(/[&<>"']/g, (m) => map[m])
+	const map: Record<string, string> = {
+		"&": "&amp;",
+		"<": "&lt;",
+		">": "&gt;",
+		'"': "&quot;",
+		"'": "&#039;",
+	};
+	return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
 // URL 验证函数
 function isValidUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    // 只允许 http 和 https 协议
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-  } catch {
-    return false
-  }
+	try {
+		const parsed = new URL(url);
+		// 只允许 http 和 https 协议
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			return false;
+		}
+		// 验证 origin 是否在允许列表中
+		const allowedOrigins = process.env.ALLOWED_ORIGINS
+			? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+			: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"];
+		return allowedOrigins.includes(parsed.origin);
+	} catch {
+		return false;
+	}
 }
 
 /**
  * 发送邮件
- * 
+ *
  * 使用 Resend 服务发送邮件
  * 免费层：每月 3,000 封邮件
  */
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
-      to,
-      subject,
-      html,
-      text,
-    })
+	try {
+		const { data, error } = await resend.emails.send({
+			from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+			to,
+			subject,
+			html,
+			text,
+		});
 
-    if (error) {
-      console.error("Failed to send email:", error.message)
-      return { success: false, error: error.message }
-    }
+		if (error) {
+			console.error("Failed to send email:", error.message);
+			return { success: false, error: error.message };
+		}
 
-    return { success: true, messageId: data?.id }
-  } catch (error) {
-    console.error("Email sending error:", (error as Error)?.message || "Unknown error")
-    return { success: false, error: "Failed to send email" }
-  }
+		return { success: true, messageId: data?.id };
+	} catch (error) {
+		console.error(
+			"Email sending error:",
+			(error as Error)?.message || "Unknown error",
+		);
+		return { success: false, error: "Failed to send email" };
+	}
 }
 
 /**
  * 发送验证邮件
  */
 export async function sendVerificationEmail({
-  to,
-  userName,
-  verificationUrl,
+	to,
+	userName,
+	verificationUrl,
 }: {
-  to: string
-  userName: string
-  verificationUrl: string
+	to: string;
+	userName: string;
+	verificationUrl: string;
 }) {
-  // 验证 URL 安全性
-  if (!isValidUrl(verificationUrl)) {
-    console.error("Invalid verification URL")
-    return { success: false, error: "Invalid verification URL" }
-  }
+	// 验证 URL 安全性
+	if (!isValidUrl(verificationUrl)) {
+		console.error("Invalid verification URL");
+		return { success: false, error: "Invalid verification URL" };
+	}
 
-  // 转义用户输入
-  const escapedUserName = escapeHtml(userName)
-  const escapedUrl = escapeHtml(verificationUrl)
+	// 转义用户输入
+	const escapedUserName = escapeHtml(userName);
+	const escapedUrl = escapeHtml(verificationUrl);
 
-  return sendEmail({
-    to,
-    subject: "Verify your email address",
-    html: `
+	return sendEmail({
+		to,
+		subject: "Verify your email address",
+		html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #333;">Verify your email address</h1>
         <p>Hello ${escapedUserName},</p>
@@ -97,36 +107,36 @@ export async function sendVerificationEmail({
         <p style="color: #999; font-size: 12px;">If you didn't request this email, you can safely ignore it.</p>
       </div>
     `,
-    text: `Hello ${escapedUserName},\n\nPlease verify your email by visiting: ${escapedUrl}\n\nThis link will expire in 1 hour.`,
-  })
+		text: `Hello ${escapedUserName},\n\nPlease verify your email by visiting: ${escapedUrl}\n\nThis link will expire in 1 hour.`,
+	});
 }
 
 /**
  * 发送重置密码邮件
  */
 export async function sendResetPasswordEmail({
-  to,
-  userName,
-  resetUrl,
+	to,
+	userName,
+	resetUrl,
 }: {
-  to: string
-  userName: string
-  resetUrl: string
+	to: string;
+	userName: string;
+	resetUrl: string;
 }) {
-  // 验证 URL 安全性
-  if (!isValidUrl(resetUrl)) {
-    console.error("Invalid reset URL")
-    return { success: false, error: "Invalid reset URL" }
-  }
+	// 验证 URL 安全性
+	if (!isValidUrl(resetUrl)) {
+		console.error("Invalid reset URL");
+		return { success: false, error: "Invalid reset URL" };
+	}
 
-  // 转义用户输入
-  const escapedUserName = escapeHtml(userName)
-  const escapedUrl = escapeHtml(resetUrl)
+	// 转义用户输入
+	const escapedUserName = escapeHtml(userName);
+	const escapedUrl = escapeHtml(resetUrl);
 
-  return sendEmail({
-    to,
-    subject: "Reset your password",
-    html: `
+	return sendEmail({
+		to,
+		subject: "Reset your password",
+		html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #333;">Reset your password</h1>
         <p>Hello ${escapedUserName},</p>
@@ -138,6 +148,6 @@ export async function sendResetPasswordEmail({
         <p style="color: #999; font-size: 12px;">If you didn't request a password reset, you can safely ignore this email.</p>
       </div>
     `,
-    text: `Hello ${escapedUserName},\n\nReset your password by visiting: ${escapedUrl}\n\nThis link will expire in 1 hour.`,
-  })
+		text: `Hello ${escapedUserName},\n\nReset your password by visiting: ${escapedUrl}\n\nThis link will expire in 1 hour.`,
+	});
 }
