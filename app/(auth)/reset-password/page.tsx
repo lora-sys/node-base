@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
 					},
 				});
 				if (session.data) {
-					router.push("/");
+					router.replace("/");
 				}
 			} catch (error) {
 				// 未登录，继续显示页面

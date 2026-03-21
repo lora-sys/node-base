@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "formate": "biome format --write",
+    "format": "biome format --write",
     "inngest:dev": "inngest-cli dev",
     "dev:all": "mprocs"
   },
@@ -59,6 +59,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "inngest-cli": "^1.17.5",
+    "mprocs": "^0.9.1",
     "prisma": "^7.5.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",

@@ -47,18 +47,16 @@ export const auth = betterAuth({
 
 		// 发送重置密码邮件
 		sendResetPassword: async ({ user, url }, request) => {
-			try {
-				await sendResetPasswordEmail({
-					to: user.email,
-					userName: user.name,
-					resetUrl: url,
-				});
-			} catch (error) {
-				console.error(
-					"Failed to send reset password email:",
-					(error as Error).message,
-				);
-				// 不要重新抛出错误，避免影响用户体验
+			const result = await sendResetPasswordEmail({
+				to: user.email,
+				userName: user.name,
+				resetUrl: url,
+			});
+
+			if (!result.success) {
+				const errorMsg = result.error || "Failed to send reset password email";
+				console.error(errorMsg, { userId: user.id, email: user.email });
+				throw new Error(errorMsg);
 			}
 		},
 
@@ -80,18 +78,16 @@ export const auth = betterAuth({
 	emailVerification: {
 		// 发送验证邮件
 		sendVerificationEmail: async ({ user, url }, request) => {
-			try {
-				await sendVerificationEmail({
-					to: user.email,
-					userName: user.name,
-					verificationUrl: url,
-				});
-			} catch (error) {
-				console.error(
-					"Failed to send verification email:",
-					(error as Error).message,
-				);
-				// 不要重新抛出错误，避免影响用户体验
+			const result = await sendVerificationEmail({
+				to: user.email,
+				userName: user.name,
+				verificationUrl: url,
+			});
+
+			if (!result.success) {
+				const errorMsg = result.error || "Failed to send verification email";
+				console.error(errorMsg, { userId: user.id, email: user.email });
+				throw new Error(errorMsg);
 			}
 		},
 		// 注册后自动发送验证邮件

@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { createTRPCContext } from "@/trpc/init";
 import { appRouter } from "@/trpc/routers/_app";
-
+import { headers } from "next/headers";
 export const caller = appRouter.createCaller(async () =>
 	createTRPCContext({ headers: await headers() }),
 );

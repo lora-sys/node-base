@@ -1,5 +1,5 @@
 procs:
-  innest:
+  inngest:
     cmd: ["bun", "run", "inngest:dev"]
 
   next:

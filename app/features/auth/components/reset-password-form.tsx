@@ -62,7 +62,7 @@ export function ResetPasswordForm({
 
 	const [tokenStatus, setTokenStatus] = React.useState<
 		"checking" | "valid" | "invalid"
-	>(error ? "invalid" : token ? "valid" : "checking");
+	>(error ? "invalid" : token ? "valid" : "invalid");
 
 	React.useEffect(() => {
 		const newStatus = error ? "invalid" : token ? "valid" : "invalid";
@@ -72,7 +72,8 @@ export function ResetPasswordForm({
 				invalidCallbackRef.current?.();
 			}
 		}
-	}, [token, error, tokenStatus]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [token, error]);
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),

@@ -40,6 +40,7 @@ export function SocialLoginButtons({
 					onClick={() => onSocialLogin(provider)}
 					disabled={disabled}
 					aria-label={getAriaLabel(provider)}
+					type="button"
 				>
 					<Image
 						src={SOCIAL_PROVIDER_ICONS[provider]}

@@ -26,7 +26,14 @@ function isValidUrl(url: string): boolean {
 	try {
 		const parsed = new URL(url);
 		// 只允许 http 和 https 协议
-		return parsed.protocol === "http:" || parsed.protocol === "https:";
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			return false;
+		}
+		// 验证 origin 是否在允许列表中
+		const allowedOrigins = process.env.ALLOWED_ORIGINS
+			? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+			: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"];
+		return allowedOrigins.includes(parsed.origin);
 	} catch {
 		return false;
 	}
