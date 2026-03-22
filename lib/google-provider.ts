@@ -1,4 +1,5 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import type { Dispatcher } from 'undici';
 
 // 从环境变量读取代理 URL（无硬编码默认值）
 const proxyUrl =
@@ -12,16 +13,21 @@ if (!apiKey) {
   throw new Error('GOOGLE_GENERATIVE_AI_API_KEY environment variable is required');
 }
 
+// 缓存 ProxyAgent 实例，避免每次调用都创建新连接
+let cachedProxyAgent: Dispatcher | undefined;
+
 // 创建 proxyFetch 函数（异步初始化 undici）
-const proxyFetch = (async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
-  // 如果配置了代理，创建带 dispatcher 的 fetch
+const proxyFetch = (async (url: string | URL | Request, init?: RequestInit & { dispatcher?: Dispatcher }): Promise<Response> => {
+  // 如果配置了代理，创建或复用 ProxyAgent
   if (proxyUrl) {
-    const { ProxyAgent, Dispatcher } = await import('undici');
-    const proxyAgent: Dispatcher = new ProxyAgent({ uri: proxyUrl });
+    if (!cachedProxyAgent) {
+      const { ProxyAgent } = await import('undici');
+      cachedProxyAgent = new ProxyAgent({ uri: proxyUrl });
+    }
 
     return fetch(url, {
       ...init,
-      dispatcher: proxyAgent,
+      dispatcher: cachedProxyAgent,
     });
   }
 

@@ -9,7 +9,7 @@ export async function register() {
     if (proxyUrl) {
       try {
         const undici = await import("undici");
-        const proxyAgent = new undici.ProxyAgent({ uri: proxyUrl });
+        const proxyAgent = undici.ProxyAgent;
         const originalFetch = globalThis.fetch;
 
         // Patch globalThis.fetch，为所有外部请求注入 dispatcher（包括 Sentry SDK）
@@ -26,7 +26,8 @@ export async function register() {
               urlString = String((input as any).url);
             }
           } catch {
-            urlString = undefined;
+            // URL 解析失败，视为本地请求，不走代理
+            return originalFetch(input, init);
           }
 
           // 本地请求不走代理
@@ -41,8 +42,8 @@ export async function register() {
                 hostname === "::1" ||
                 hostname === "0.0.0.0";
             } catch {
-              // 如果 URL 解析失败，保守处理：不代理
-              isLocal = false;
+              // URL 解析失败，视为本地请求
+              isLocal = true;
             }
           }
 
@@ -56,7 +57,14 @@ export async function register() {
           } as any);
         }) as typeof fetch;
 
-        console.log("[instrumentation] Proxy agent configured for:", proxyUrl);
+        // 安全日志：只打印代理主机名:端口，避免泄露凭据
+        try {
+          const proxyURL = new URL(proxyUrl);
+          console.log("[instrumentation] Proxy agent configured for:", `${proxyURL.hostname}:${proxyURL.port}`);
+        } catch {
+          // 如果 proxyUrl 不是有效 URL，只打印存在性
+          console.log("[instrumentation] Proxy agent configured");
+        }
       } catch (err) {
         console.error("[instrumentation] Failed to setup proxy:", err);
       }
