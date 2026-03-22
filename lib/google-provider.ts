@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import type { Dispatcher } from 'undici';
+import { fetch as undiciFetch, ProxyAgent } from 'undici';
 
 // 从环境变量读取代理 URL（无硬编码默认值）
 const proxyUrl =
@@ -13,30 +13,26 @@ if (!apiKey) {
   throw new Error('GOOGLE_GENERATIVE_AI_API_KEY environment variable is required');
 }
 
-// 缓存 ProxyAgent 实例，避免每次调用都创建新连接
-let cachedProxyAgent: Dispatcher | undefined;
+// 缓存 ProxyAgent 实例
+let proxyAgent: ProxyAgent | undefined;
 
-// 创建 proxyFetch 函数（异步初始化 undici）
-const proxyFetch = (async (url: string | URL | Request, init?: RequestInit & { dispatcher?: Dispatcher }): Promise<Response> => {
-  // 如果配置了代理，创建或复用 ProxyAgent
-  if (proxyUrl) {
-    if (!cachedProxyAgent) {
-      const { ProxyAgent } = await import('undici');
-      cachedProxyAgent = new ProxyAgent({ uri: proxyUrl });
-    }
-
-    return fetch(url, {
-      ...init,
-      dispatcher: cachedProxyAgent,
-    });
+// 使用 undici 的 fetch，直接注入 dispatcher
+const googleFetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+  // 如果配置了代理，初始化或复用 ProxyAgent
+  if (proxyUrl && !proxyAgent) {
+    proxyAgent = new ProxyAgent({ uri: proxyUrl });
   }
 
-  // 无代理配置，直接使用标准 fetch
-  return fetch(url, init);
-}) as typeof fetch;
+  // 使用 undiciFetch 并传递 dispatcher（如果存在）
+  // @ts-expect-error undici fetch 接受 dispatcher 选项
+  return undiciFetch(url, {
+    ...init,
+    ...(proxyAgent && { dispatcher: proxyAgent }),
+  });
+};
 
 // 导出配置好的 Google provider
 export const google = createGoogleGenerativeAI({
   apiKey,
-  fetch: proxyFetch,
+  fetch: googleFetch,
 });
