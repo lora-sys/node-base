@@ -3,4 +3,4 @@ procs:
     cmd: ["bun", "run", "inngest:dev"]
 
   next:
-    cmd: ["bun", "run", "dev:proxy"]
+    cmd: ["bun", "run", "dev"]

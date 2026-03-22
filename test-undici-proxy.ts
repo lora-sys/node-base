@@ -1,0 +1,8 @@
+// 测试 undici 全局代理配置
+import { setGlobalDispatcher } from 'undici';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
+const proxyAgent = new HttpsProxyAgent('http://192.168.3.85:7897');
+setGlobalDispatcher(proxyAgent);
+
+console.log('Global undici dispatcher set to proxy');
