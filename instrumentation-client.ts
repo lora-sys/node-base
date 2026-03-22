@@ -13,7 +13,7 @@ const tracesSampleRate = process.env.NODE_ENV === "production"
 const validatedSampleRate = Math.min(1, Math.max(0, tracesSampleRate));
 
 Sentry.init({
-  dsn: "https://5576d797295b8e7f063e0945114774c1@o4511086872494080.ingest.de.sentry.io/4511086891827280",
+  dsn: "https://8b7ab290eb65ca499dafeea27d8b0ed7@o4511088185573376.ingest.us.sentry.io/4511088189046784",
 
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
