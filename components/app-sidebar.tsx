@@ -26,7 +26,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { useHasActivateSubscription } from "@/app/features/subscriptions/hooks/use-subscriptions";
+import { useHasActiveSubscription } from "@/app/features/subscriptions/hooks/use-subscriptions";
 
 
 
@@ -68,7 +68,7 @@ export const AppSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const {hasActivateSubscription,isLoading} = useHasActivateSubscription();
+  const {hasActiveSubscription,isLoading} = useHasActiveSubscription();
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
@@ -83,7 +83,7 @@ export const AppSidebar = () => {
         },
       });
     } catch (error) {
-      toast.error("An unexpected error occurred"+error);
+      toast.error(`An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSigningOut(false);
     }
@@ -134,7 +134,7 @@ export const AppSidebar = () => {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          {!hasActivateSubscription && !isLoading && (
+          {!hasActiveSubscription && !isLoading && (
             <SidebarMenuItem>
               <SidebarMenuButton
                 tooltip="Upgrade to Pro"

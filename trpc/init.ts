@@ -41,23 +41,37 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   });
 });
 
-export const premiumProcudure = protectedProcedure.use(
+export const premiumProcedure = protectedProcedure.use(
   async ({ctx,next}) => {
-    const customer = await polarClient.customers.getStateExternal({
-      externalId : ctx.auth.user.id
-    })
-    if (
-      !customer.activeSubscriptions ||
-      customer.activeSubscriptions.length === 0
-    ) {
+    try {
+      const customer = await polarClient.customers.getStateExternal({
+        externalId : ctx.auth.user.id
+      });
+
+      if (
+        !customer.activeSubscriptions ||
+        customer.activeSubscriptions.length === 0
+      ) {
+        throw new TRPCError({
+          code : "FORBIDDEN",
+          message : "Activate subscription required",
+        });
+      }
+
+      return next({ctx : {...ctx,customer}});
+    } catch (error) {
+      // Log the error for debugging
+      console.error("Error fetching customer state:", error);
+
+      // Determine appropriate error code
+      const isAuthError = error instanceof Error && error.message?.includes("Unauthorized");
+      const code = isAuthError ? "UNAUTHORIZED" : "INTERNAL_SERVER_ERROR";
+
       throw new TRPCError({
-        code : "FORBIDDEN",
-        message : "Activate subscription required",
-      })
+        code,
+        message: `Failed to verify subscription: ${error instanceof Error ? error.message : "Unknown error"}`,
+        cause: error,
+      });
     }
-
-   return next({ctx : {...ctx,customer}});
-
-
   }
-)
+);

@@ -11,15 +11,15 @@ export const useSubscription = () => {
   });
 };
 
-export const useHasActivateSubscription = () => {
-  const { data: custemerState, isLoading, ...rest } = useSubscription();
-  const hasActivateSubscription =
-    custemerState?.activeSubscriptions &&
-    custemerState.activeSubscriptions.length > 0;
+export const useHasActiveSubscription = () => {
+  const { data: customerState, isLoading, ...rest } = useSubscription();
+  const hasActiveSubscription =
+    customerState?.activeSubscriptions &&
+    customerState.activeSubscriptions.length > 0;
 
   return {
-    hasActivateSubscription,
-    subscription: custemerState?.activeSubscriptions?.[0],
+    hasActiveSubscription,
+    subscription: customerState?.activeSubscriptions?.[0],
     isLoading,
     ...rest,
   };

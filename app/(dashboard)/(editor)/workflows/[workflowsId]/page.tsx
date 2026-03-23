@@ -12,7 +12,7 @@ const Page = async ({params}:PageProps) => {
     const {workflowsId} = await params;
     return (
         <p>
-          executions id : {workflowsId} page
+          Workflow ID: {workflowsId}
         </p>
     )
 }
