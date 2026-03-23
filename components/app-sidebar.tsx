@@ -68,7 +68,34 @@ export const AppSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isBillingActionPending, setIsBillingActionPending] = useState(false);
   const {hasActiveSubscription,isLoading} = useHasActiveSubscription();
+
+  const handleUpgrade = async () => {
+    setIsBillingActionPending(true);
+    try {
+      await authClient.checkout({ slug: "pro" });
+    } catch (error) {
+      toast.error(
+        `Unable to start checkout: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setIsBillingActionPending(false);
+    }
+  };
+
+  const handleBillingPortal = async () => {
+    setIsBillingActionPending(true);
+    try {
+      await authClient.customer.portal();
+    } catch (error) {
+      toast.error(
+        `Unable to open billing portal: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setIsBillingActionPending(false);
+    }
+  };
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
@@ -139,7 +166,8 @@ export const AppSidebar = () => {
               <SidebarMenuButton
                 tooltip="Upgrade to Pro"
                 className="gap-x-4 h-10 px-4"
-                onClick={() => authClient.checkout({slug : "pro"})}
+                onClick={handleUpgrade}
+                disabled={isBillingActionPending}
               >
                 <StarIcon className="h-4 w-4" />
                 <span>Upgrade to Pro</span>
@@ -150,7 +178,8 @@ export const AppSidebar = () => {
             <SidebarMenuButton
               tooltip="Billing Portal"
               className="gap-x-4 h-10 px-4"
-              onClick={() => authClient.customer.portal()}
+              onClick={handleBillingPortal}
+              disabled={isBillingActionPending}
             >
               <CreditCardIcon className="h-4 w-4" />
               <span>Billing Portal</span>

@@ -60,16 +60,18 @@ export const premiumProcedure = protectedProcedure.use(
 
       return next({ctx : {...ctx,customer}});
     } catch (error) {
-      // Log the error for debugging
+      // If it's already a TRPCError (e.g., FORBIDDEN from subscription check), re-throw it unchanged
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
+      // Log unexpected errors for debugging
       console.error("Error fetching customer state:", error);
 
-      // Determine appropriate error code
-      const isAuthError = error instanceof Error && error.message?.includes("Unauthorized");
-      const code = isAuthError ? "UNAUTHORIZED" : "INTERNAL_SERVER_ERROR";
-
+      // For non-TRPC errors, return a generic error without leaking backend details
       throw new TRPCError({
-        code,
-        message: `Failed to verify subscription: ${error instanceof Error ? error.message : "Unknown error"}`,
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to verify subscription status",
         cause: error,
       });
     }
