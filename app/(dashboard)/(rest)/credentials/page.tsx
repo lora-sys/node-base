@@ -1,10 +1,10 @@
 import { requireAuth } from "@/lib/auth-utils";
 
 const Page =  async () => {
-await requireAuth();
+    await requireAuth();
     return (
         <p>
-          cexecutions page 
+          credentials page
         </p>
     )
 }

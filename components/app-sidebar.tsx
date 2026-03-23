@@ -18,8 +18,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -28,6 +26,10 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { useHasActivateSubscription } from "@/app/features/subscriptions/hooks/use-subscriptions";
+
+
+
 
 const menuItem = [
   {
@@ -66,20 +68,25 @@ export const AppSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [isSigningOut, setIsSigningOut] = useState(false);
-
+  const {hasActivateSubscription,isLoading} = useHasActivateSubscription();
   const handleSignOut = async () => {
     setIsSigningOut(true);
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/login");
+    try {
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/login");
+          },
+          onError: (ctx) => {
+            toast.error(ctx.error.message || "Failed to sign out");
+          },
         },
-        onError: (ctx) => {
-          setIsSigningOut(false);
-          toast.error(ctx.error.message || "Failed to sign out");
-        },
-      },
-    });
+      });
+    } catch (error) {
+      toast.error("An unexpected error occurred"+error);
+    } finally {
+      setIsSigningOut(false);
+    }
   };
   return (
     <Sidebar collapsible="icon">
@@ -88,7 +95,7 @@ export const AppSidebar = () => {
           <SidebarMenuButton asChild className="gap-x-4 h-10 px-4">
             <Link href="/workflows" prefetch>
               <Image
-                src="/logos/logo.svg"
+                src="/logo.svg"
                 alt="nodebase"
                 width={30}
                 height={30}
@@ -127,23 +134,29 @@ export const AppSidebar = () => {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          {!hasActivateSubscription && !isLoading && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Upgrade to Pro"
+                className="gap-x-4 h-10 px-4"
+                onClick={() => authClient.checkout({slug : "pro"})}
+              >
+                <StarIcon className="h-4 w-4" />
+                <span>Upgrade to Pro</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Upgrade to Pro"
-              className="gap-x-4 h-10 px-4"
-              onClick={() => {}}
-            >
-              <CreditCardIcon className="h-4 w-4" />
-              <span>Upgrade to Pro</span>
-            </SidebarMenuButton>
             <SidebarMenuButton
               tooltip="Billing Portal"
               className="gap-x-4 h-10 px-4"
-              onClick={() => {}}
+              onClick={() => authClient.customer.portal()}
             >
               <CreditCardIcon className="h-4 w-4" />
               <span>Billing Portal</span>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Logout"
               className="gap-x-4 h-10 px-4"

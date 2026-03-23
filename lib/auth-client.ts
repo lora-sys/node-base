@@ -1,6 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 import { toast } from "sonner";
-
+import { polarClient } from "@polar-sh/better-auth/client"; 
+import { organizationClient } from "better-auth/client/plugins"; 
 export const authClient = createAuthClient({
 	// 全局错误处理
 	fetchOptions: {
@@ -20,4 +21,5 @@ export const authClient = createAuthClient({
 			// 其他错误由各自的请求处理
 		},
 	},
+	plugins : [polarClient()],
 });
