@@ -1,16 +1,17 @@
-interface PageProps {
-    params : Promise <{
-      executionsId : string;  
-    }>
-}
 import { requireAuth } from "@/lib/auth-utils";
 
+interface PageProps {
+    params : Promise <{
+      executionsId : string;
+    }>
+}
+
 const Page = async ({params}:PageProps) => {
-const {executionsId} = await params
- await requireAuth();   
+    await requireAuth();
+    const {executionsId} = await params;
     return (
         <p>
-          cexecutions id : {executionsId} page 
+          executions id : {executionsId} page
         </p>
     )
 }

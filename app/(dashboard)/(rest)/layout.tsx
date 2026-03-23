@@ -1,13 +1,12 @@
 import { AppHeader } from "@/components/app-header";
-import React from "react";
+import type { ReactNode } from "react";
 
-const Layout = ({children} : { children : React.ReactNode })=>{
+const Layout = ({children} : { children : ReactNode })=>{
     return (
-        <>.  
+        <>
             <AppHeader/>
-             <main className="flex-1">{children}</main> 
+             <main className="flex-1">{children}</main>
         </>
-
     );
 };
 

@@ -1,5 +1,8 @@
 import { auth } from "@/lib/auth";
+import { polarClient } from "@/lib/polar";
+import { customerTaxIdFromJSON } from "@polar-sh/sdk/models/components/customer.js";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { CopyX } from "lucide-react";
 
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
@@ -37,3 +40,40 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     } as typeof ctx & { auth: NonNullable<Session> },
   });
 });
+
+export const premiumProcedure = protectedProcedure.use(
+  async ({ctx,next}) => {
+    try {
+      const customer = await polarClient.customers.getStateExternal({
+        externalId : ctx.auth.user.id
+      });
+
+      if (
+        !customer.activeSubscriptions ||
+        customer.activeSubscriptions.length === 0
+      ) {
+        throw new TRPCError({
+          code : "FORBIDDEN",
+          message : "Activate subscription required",
+        });
+      }
+
+      return next({ctx : {...ctx,customer}});
+    } catch (error) {
+      // If it's already a TRPCError (e.g., FORBIDDEN from subscription check), re-throw it unchanged
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
+      // Log unexpected errors for debugging
+      console.error("Error fetching customer state:", error);
+
+      // For non-TRPC errors, return a generic error without leaking backend details
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to verify subscription status",
+        cause: error,
+      });
+    }
+  }
+);

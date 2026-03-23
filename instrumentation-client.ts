@@ -4,23 +4,14 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-// 动态 tracesSampleRate: 生产环境降低采样，开发环境 100%
-const tracesSampleRate = process.env.NODE_ENV === "production"
-  ? parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.1")
-  : 1;
-
-// 确保采样率在 0-1 之间
-const validatedSampleRate = Math.min(1, Math.max(0, tracesSampleRate));
-
 Sentry.init({
   dsn: "https://8b7ab290eb65ca499dafeea27d8b0ed7@o4511088185573376.ingest.us.sentry.io/4511088189046784",
 
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 
-  // Define how likely traces are sampled.
-  tracesSampleRate: validatedSampleRate,
-
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
@@ -34,7 +25,7 @@ Sentry.init({
 
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: process.env.SEND_DEFAULT_PII !== 'false',
+  sendDefaultPii: true,
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
