@@ -88,7 +88,16 @@ export const premiumProcedure = protectedProcedure.use(
             message: 'Too many requests, please try again in a moment',
           });
         }
-        
+
+        // Customer not found or unauthorized (404)
+        if (polarError.status === 404) {
+          console.warn('Polar API customer not found:', polarError);
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Customer not found or unauthorized',
+          });
+        }
+
         // Polar API service error (5xx)
         if (polarError.status && polarError.status >= 500 && polarError.status < 600) {
           console.error('Polar API service error:', polarError);
