@@ -22,6 +22,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  workflows     Workflow[]
   @@unique([email])
   @@map("user")
 }
@@ -76,14 +77,21 @@ model Verification {
 }
 
 model RateLimit {
-  id  String @id
-  key String @unique
-  count Int
+  id          String @id
+  key         String @unique
+  count       Int
   lastRequest BigInt
+
   @@map("rateLimit")
 }
 
 model Workflow {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId String
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+  @@index([userId])
+  @@map("workflow")
 }
