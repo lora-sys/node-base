@@ -1,6 +1,17 @@
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, SearchIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import Link from "next/link";
+import { Input } from "./ui/input";
+import { InputGroup, InputGroupAddon } from "./ui/input-group";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationPrevious,
+    PaginationNext,
+    PaginationEllipsis,
+} from "./ui/pagination";
 
  type EntityHeaderProps =  {
     title : string;
@@ -94,3 +105,140 @@ export const EntityContainer = ({
      </div>
   );
 };
+
+
+interface EntitySearchProps {
+    value : string;
+    onChange : (value : string) => void;
+    placeholder ?: string;
+    className ?: string;
+}
+
+export const EntitySearch = ({
+    value,
+    onChange,
+    placeholder = "Search...",
+    className
+}: EntitySearchProps) => {
+    return (
+        <div className={className}>
+            <InputGroup className="h-9! rounded-lg! border-input/30 bg-input/30 shadow-none!">
+                <Input
+                    type="text"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={placeholder}
+                    className="h-auto! border-0! bg-transparent! shadow-none! focus-visible:border-0! focus-visible:ring-0!"
+                />
+                <InputGroupAddon align="inline-start">
+                    <SearchIcon className="size-4 text-muted-foreground" />
+                </InputGroupAddon>
+            </InputGroup>
+        </div>
+    );
+};
+
+interface EntityPaginationProps {
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange: (page: number) => void;
+    className?: string;
+}
+
+export const EntityPagination = ({
+    page,
+    pageSize,
+    total,
+    onPageChange,
+    className
+}: EntityPaginationProps) => {
+    const totalPages = Math.ceil(total / pageSize);
+    const start = (page - 1) * pageSize + 1;
+    const end = Math.min(page * pageSize, total);
+
+    // Generate page numbers to display
+    const getPageNumbers = () => {
+        const pages: (number | 'ellipsis')[] = [];
+        const maxVisible = 5;
+
+        if (totalPages <= maxVisible) {
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (page <= 3) {
+                for (let i = 1; i <= 3; i++) pages.push(i);
+                pages.push('ellipsis');
+                pages.push(totalPages);
+            } else if (page >= totalPages - 2) {
+                pages.push(1);
+                pages.push('ellipsis');
+                for (let i = totalPages - 2; i <= totalPages; i++) pages.push(i);
+            } else {
+                pages.push(1);
+                pages.push('ellipsis');
+                for (let i = page - 1; i <= page + 1; i++) pages.push(i);
+                pages.push('ellipsis');
+                pages.push(totalPages);
+            }
+        }
+        return pages;
+    };
+
+    if (totalPages <= 1) return null;
+
+    return (
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${className || ''}`}>
+            <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious
+                            href="#"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (page > 1) onPageChange(page - 1);
+                            }}
+                            className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                        />
+                    </PaginationItem>
+
+                    {getPageNumbers().map((pageNum, index) => (
+                        pageNum === 'ellipsis' ? (
+                            <PaginationItem key={`ellipsis-${index}`}>
+                                <PaginationEllipsis />
+                            </PaginationItem>
+                        ) : (
+                            <PaginationItem key={pageNum}>
+                                <PaginationLink
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        onPageChange(pageNum);
+                                    }}
+                                    isActive={pageNum === page}
+                                >
+                                    {pageNum}
+                                </PaginationLink>
+                            </PaginationItem>
+                        )
+                    ))}
+
+                    <PaginationItem>
+                        <PaginationNext
+                            href="#"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (page < totalPages) onPageChange(page + 1);
+                            }}
+                            className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+                        />
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+                {total > 0 ? `${start}-${end} of ${total}` : 'No results'}
+            </div>
+        </div>
+    );
+}; 

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -53,6 +54,7 @@ const formSchema = z
 type FormData = z.infer<typeof formSchema>;
 
 export function RegisterForm() {
+	const router = useRouter();
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -78,6 +80,7 @@ export function RegisterForm() {
 				onSuccess: () => {
 					toast.success(FORM_MESSAGES.REGISTER_SUCCESS);
 					form.reset();
+					router.push("/");
 				},
 				onError: (ctx) => {
 					toast.error(ctx.error.message);
