@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CheckIcon, XIcon, PencilIcon } from "lucide-react";
@@ -7,8 +7,8 @@ import { useUpdateWorkflow } from "@/app/features/workflows/hooks/use-workflows"
 import React from "react";
 
 interface EditorNameInputProps {
-    workflowId: string;
-    initialName: string;
+	workflowId: string;
+	initialName: string;
 }
 
 const MAX_NAME_LENGTH = 50;
@@ -17,131 +17,161 @@ const MAX_NAME_LENGTH = 50;
  * 可编辑的工作流名称输入框
  * 支持点击编辑、保存、取消
  */
-export const EditorNameInput = ({ workflowId, initialName }: EditorNameInputProps) => {
-    const updateWorkflow = useUpdateWorkflow();
-    const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState(initialName);
-    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const inputRef = useRef<HTMLInputElement>(null);
-    const isEditingRef = useRef(isEditing);
+export const EditorNameInput = ({
+	workflowId,
+	initialName,
+}: EditorNameInputProps) => {
+	const updateWorkflow = useUpdateWorkflow();
+	const [isEditing, setIsEditing] = useState(false);
+	const [editName, setEditName] = useState(initialName);
+	const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
+		"idle",
+	);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const isEditingRef = useRef(isEditing);
+	const mountedRef = useRef(true);
+	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // 保持 ref 同步
-    React.useEffect(() => {
-        isEditingRef.current = isEditing;
-    }, [isEditing]);
+	// 保持 ref 同步
+	React.useEffect(() => {
+		isEditingRef.current = isEditing;
+	}, [isEditing]);
 
-    // 同步 initialName 变化 - 只在非编辑状态下同步
-    React.useEffect(() => {
-        if (!isEditingRef.current) {
-            setEditName(initialName);
-        }
-    }, [initialName]);
+	// 跟踪组件挂载状态
+	React.useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
 
-    // 进入编辑模式时聚焦
-    useEffect(() => {
-        if (isEditing && inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.select();
-        }
-    }, [isEditing]);
+	// 清理定时器
+	React.useEffect(() => {
+		return () => {
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
+		};
+	}, []);
 
-    // 验证错误
-    const validationError = useMemo(() => {
-        if (!editName.trim()) return 'Name cannot be empty';
-        if (editName.length > MAX_NAME_LENGTH) return `Name too long (max ${MAX_NAME_LENGTH} chars)`;
-        return null;
-    }, [editName]);
+	// 同步 initialName 变化 - 只在非编辑状态下同步
+	React.useEffect(() => {
+		if (!isEditingRef.current) {
+			setEditName(initialName);
+		}
+	}, [initialName]);
 
-    const handleSave = () => {
-        const trimmedName = editName.trim();
-        if (trimmedName && !validationError) {
-            updateWorkflow.mutate(
-                { id: workflowId, name: trimmedName },
-                {
-                    onSuccess: () => {
-                        setSaveStatus('success');
-                        setTimeout(() => {
-                            setSaveStatus('idle');
-                            setIsEditing(false);
-                        }, 1000);
-                    },
-                    onError: () => {
-                        setSaveStatus('error');
-                    },
-                }
-            );
-        }
-    };
+	// 进入编辑模式时聚焦
+	useEffect(() => {
+		if (isEditing && inputRef.current) {
+			inputRef.current.focus();
+			inputRef.current.select();
+		}
+	}, [isEditing]);
 
-    const handleCancel = () => {
-        setEditName(initialName);
-        setIsEditing(false);
-        setSaveStatus('idle');
-    };
+	// 验证错误
+	const validationError = useMemo(() => {
+		const trimmedName = editName.trim();
+		if (!trimmedName) return "Name cannot be empty";
+		if (trimmedName.length > MAX_NAME_LENGTH)
+			return `Name too long (max ${MAX_NAME_LENGTH} chars)`;
+		return null;
+	}, [editName]);
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            handleSave();
-        } else if (e.key === "Escape") {
-            handleCancel();
-        }
-    };
+	const handleSave = () => {
+		const trimmedName = editName.trim();
+		if (trimmedName && !validationError) {
+			updateWorkflow.mutate(
+				{ id: workflowId, name: trimmedName },
+				{
+					onSuccess: () => {
+						setSaveStatus("success");
+						timeoutRef.current = setTimeout(() => {
+							if (mountedRef.current) {
+								setSaveStatus("idle");
+								setIsEditing(false);
+							}
+						}, 1000);
+					},
+					onError: () => {
+						setSaveStatus("error");
+					},
+				},
+			);
+		}
+	};
 
-    // 保存中禁用输入
-    const isDisabled = updateWorkflow.isPending;
+	const handleCancel = () => {
+		setEditName(initialName);
+		setIsEditing(false);
+		setSaveStatus("idle");
+	};
 
-    if (isEditing) {
-        return (
-            <div className="flex items-center gap-2">
-                <Input
-                    ref={inputRef}
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isDisabled}
-                    className="h-7 min-w-48 max-w-[320px] text-sm"
-                />
-                <div className="flex items-center gap-1">
-                    <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        onClick={handleSave}
-                        disabled={isDisabled || !!validationError}
-                        className="h-7 w-7"
-                        title="Save (Enter)"
-                    >
-                        {saveStatus === 'success' ? (
-                            <CheckIcon className="size-4 text-green-500" />
-                        ) : saveStatus === 'error' ? (
-                            <XIcon className="size-4 text-destructive" />
-                        ) : (
-                            <CheckIcon className="size-4" />
-                        )}
-                    </Button>
-                    <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        onClick={handleCancel}
-                        disabled={isDisabled}
-                        className="h-7 w-7"
-                        title="Cancel (Esc)"
-                    >
-                        <XIcon className="size-4" />
-                    </Button>
-                </div>
-            </div>
-        );
-    }
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter") {
+			handleSave();
+		} else if (e.key === "Escape") {
+			handleCancel();
+		}
+	};
 
-    return (
-        <Button
-            variant="link"
-            size="sm"
-            onClick={() => setIsEditing(true)}
-            className="h-auto p-0 gap-1.5 hover:no-underline"
-        >
-            <span className="text-sm font-medium hover:underline decoration-border">{initialName}</span>
-            <PencilIcon className="size-3 text-muted-foreground opacity-0 group-hover/button:opacity-100 transition-opacity" />
-        </Button>
-    );
+	// 保存中禁用输入
+	const isDisabled = updateWorkflow.isPending;
+
+	if (isEditing) {
+		return (
+			<div className="flex items-center gap-2">
+				<Input
+					ref={inputRef}
+					value={editName}
+					onChange={(e) => setEditName(e.target.value)}
+					onKeyDown={handleKeyDown}
+					disabled={isDisabled}
+					className="h-7 min-w-48 max-w-[320px] text-sm"
+				/>
+				<div className="flex items-center gap-1">
+					<Button
+						size="icon-xs"
+						variant="ghost"
+						onClick={handleSave}
+						disabled={isDisabled || !!validationError}
+						className="h-7 w-7"
+						title="Save (Enter)"
+					>
+						{saveStatus === "success" ? (
+							<CheckIcon className="size-4 text-green-500" />
+						) : saveStatus === "error" ? (
+							<XIcon className="size-4 text-destructive" />
+						) : (
+							<CheckIcon className="size-4" />
+						)}
+					</Button>
+					<Button
+						size="icon-xs"
+						variant="ghost"
+						onClick={handleCancel}
+						disabled={isDisabled}
+						className="h-7 w-7"
+						title="Cancel (Esc)"
+					>
+						<XIcon className="size-4" />
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<Button
+			variant="link"
+			size="sm"
+			onClick={() => setIsEditing(true)}
+			className="h-auto p-0 gap-1.5 hover:no-underline"
+		>
+			<span className="text-sm font-medium hover:underline decoration-border">
+				{initialName}
+			</span>
+			<PencilIcon className="size-3 text-muted-foreground opacity-0 group-hover/button:opacity-100 transition-opacity" />
+		</Button>
+	);
 };

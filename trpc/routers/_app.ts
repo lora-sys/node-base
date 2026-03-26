@@ -4,9 +4,8 @@ import { cache } from "react";
 
 import { workflowsRouter } from "@/app/features/workflows/server/routers";
 
-
 export const appRouter = createTRPCRouter({
-workflows : workflowsRouter,
+	workflows: workflowsRouter,
 });
 
 // export type definition of API
