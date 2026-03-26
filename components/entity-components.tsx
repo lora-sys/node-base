@@ -1,5 +1,5 @@
 import { PlusIcon, SearchIcon, Loader2Icon, AlertCircleIcon, InboxIcon, MoreHorizontal, Trash2Icon } from "lucide-react";
-import React from "react";
+import React, { useCallback } from "react";
 import { Button } from "./ui/button";
 import Link from "next/link";
 import { Input } from "./ui/input";
@@ -24,7 +24,6 @@ import {
 } from "./ui/pagination";
 import {
     Card,
-    CardAction,
     CardContent,
     CardDescription,
     CardHeader,
@@ -133,25 +132,29 @@ export const EntityContainer = ({
 
 
 interface EntitySearchProps {
-    value : string;
-    onChange : (value : string) => void;
-    placeholder ?: string;
-    className ?: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    className?: string;
 }
 
-export const EntitySearch = ({
+export const EntitySearch = React.memo(({
     value,
     onChange,
     placeholder = "Search...",
     className
 }: EntitySearchProps) => {
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.value);
+    }, [onChange]);
+
     return (
         <div className={className}>
             <InputGroup className="h-9! rounded-lg! border-input/30 bg-input/30 shadow-none!">
                 <Input
                     type="text"
                     value={value}
-                    onChange={(e) => onChange(e.target.value)}
+                    onChange={handleChange}
                     placeholder={placeholder}
                     className="h-auto! border-0! bg-transparent! shadow-none! focus-visible:border-0! focus-visible:ring-0!"
                 />
@@ -161,7 +164,9 @@ export const EntitySearch = ({
             </InputGroup>
         </div>
     );
-};
+});
+
+EntitySearch.displayName = "EntitySearch";
 
 interface EntityPaginationProps {
     page: number;
@@ -406,7 +411,13 @@ export function EntityList<T>({
     }
 
     return (
-        <div className={cn("grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", className)}>
+        <div className={cn(
+            "grid gap-3 sm:gap-4",
+            // 响应式布局：手机 1 列，平板 2 列，桌面根据内容自适应
+            "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2",
+            // 5 个元素时避免上 3 下 2，使用偶数列布局
+            className
+        )}>
             {items.map((item, index) => (
                 <React.Fragment key={getKey?.(item, index) ?? index}>
                     {renderItem(item, index)}
@@ -443,29 +454,32 @@ export const EntityItem = ({
         try {
             await onRemove?.();
         } catch (error) {
-            // Error is handled by the onRemove callback
+            console.error('Failed to remove entity:', error);
+            // Re-throw to allow caller to handle the error
+            throw error;
         }
     };
 
     return (
-        <Link href={href} prefetch className="block group">
+        <Link href={href} prefetch className="block group h-full">
             <Card
                 className={cn(
-                    "group relative transition-all duration-200",
+                    "group relative h-full flex flex-col",
+                    "transition-all duration-200",
                     "hover:shadow-lg hover:border-primary/50 hover:-translate-y-0.5",
                     "active:scale-[0.98]",
                     className
                 )}
             >
-                <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-2.5">
-                    <div className="flex items-start gap-3 sm:gap-4">
+                <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-2.5 shrink-0">
+                    <div className="flex items-start gap-2 sm:gap-3">
                         {image && (
                             <div className="flex shrink-0 items-center justify-center">
                                 {image}
                             </div>
                         )}
-                        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:gap-2">
-                            <CardTitle className="text-sm sm:text-base font-medium leading-snug line-clamp-2 break-words group-hover:underline">
+                        <div className="flex min-w-0 flex-1 flex-col gap-1 sm:gap-1.5">
+                            <CardTitle className="text-sm sm:text-base font-medium leading-snug line-clamp-2 wrap-break-words group-hover:underline min-h-10">
                                 {title}
                             </CardTitle>
                             {subtitle && (
@@ -480,11 +494,11 @@ export const EntityItem = ({
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
-                                            size="icon-sm"
-                                            className="opacity-0 group-hover/card:opacity-100 transition-opacity -mr-2"
+                                            size="icon-xs"
+                                            className="opacity-0 group-hover/card:opacity-100 transition-opacity -mr-1 sm:-mr-2"
                                             onClick={(e) => e.stopPropagation()}
                                         >
-                                            <MoreHorizontal className="size-4" />
+                                            <MoreHorizontal className="size-3.5 sm:size-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
@@ -492,7 +506,7 @@ export const EntityItem = ({
                                             onClick={handleRemove}
                                             className="text-destructive focus:text-destructive cursor-pointer"
                                         >
-                                            <Trash2Icon className="size-4 mr-2" />
+                                            <Trash2Icon className="size-3.5 sm:size-4 mr-1.5 sm:mr-2" />
                                             {isRemoving ? "Removing..." : "Remove"}
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -502,9 +516,9 @@ export const EntityItem = ({
                     </div>
                 </CardHeader>
                 {actions && (
-                    <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
+                    <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0 mt-auto">
                         <div className="mt-2 pt-2 sm:mt-3 sm:pt-2.5 border-t border-border/50">
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                 {actions}
                             </div>
                         </div>
