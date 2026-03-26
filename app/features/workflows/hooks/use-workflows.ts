@@ -24,6 +24,7 @@ export const useCreateWorkflow = ()=>{
    const router = useRouter();
    const queryClient = useQueryClient();
    const trpc = useTRPC();
+   const [params] = useWorkflowsParams();
 
     return useMutation(
       trpc.workflows.create.mutationOptions({
@@ -32,7 +33,7 @@ export const useCreateWorkflow = ()=>{
                created `);
             router.push(`/workflows/${data.id}`)
             queryClient.invalidateQueries(
-               trpc.workflows.getMany.queryOptions({})
+               trpc.workflows.getMany.queryOptions(params)
             )
          },
          onError : (error)=>{

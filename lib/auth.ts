@@ -66,7 +66,6 @@ const baseURL =
 // 开发环境下额外的可信来源（支持 mprocs 等多端口开发场景）
 const devTrustedOrigins = [
   "http://localhost:3000",
-  "http://localhost:56358",
 ];
 
 export const auth = betterAuth({

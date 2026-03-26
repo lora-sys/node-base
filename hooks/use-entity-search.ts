@@ -20,7 +20,7 @@ export function useEntitySearch<T extends string = string>({
     const [value, setValue] = useQueryState(key, {
         defaultValue,
         clearOnDefault,
-        throttle: debounceMs, // nuqs uses throttle which is similar to debounce for this use case
+        debounce: debounceMs, // Debounce delays emission until typing stops
     });
 
     const onChange = (newValue: string) => {
