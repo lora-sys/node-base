@@ -10,14 +10,14 @@ import { toast } from "sonner";
 const Page = () => {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const { data } = useQuery(trpc.getWorkflows.queryOptions());
+	const { data } = useQuery(trpc.workflows.getMany.queryOptions({ page: 1, pageSize: 10, search: "" }));
 	const create = useMutation(
-		trpc.createWorkflow.mutationOptions({
+		trpc.workflows.create.mutationOptions({
 			onSuccess: () => {
 				queryClient.invalidateQueries({
-					queryKey: trpc.getWorkflows.queryOptions().queryKey,
+					queryKey: trpc.workflows.getMany.queryOptions({ page: 1, pageSize: 10, search: "" }).queryKey,
 				});
-				toast.success("Job queued");
+				toast.success("Workflow created");
 			},
 		}),
 	);

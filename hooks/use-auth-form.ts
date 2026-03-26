@@ -109,7 +109,7 @@ export function useFormValidation<
 	const validateField = (name: keyof T, value: any) => {
 		try {
 			// 使用 schema 进行字段级验证
-			const fieldSchema = schema.shape?.[name];
+			const fieldSchema = (schema as any).shape?.[name as string];
 			if (fieldSchema) {
 				const result = fieldSchema.safeParse(value);
 				if (!result.success) {

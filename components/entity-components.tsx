@@ -1,8 +1,18 @@
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { PlusIcon, SearchIcon, Loader2Icon, AlertCircleIcon, InboxIcon, MoreHorizontal, Trash2Icon } from "lucide-react";
+import React from "react";
 import { Button } from "./ui/button";
 import Link from "next/link";
 import { Input } from "./ui/input";
 import { InputGroup, InputGroupAddon } from "./ui/input-group";
+import { cn } from "@/lib/utils";
+import {
+    Empty,
+    EmptyHeader,
+    EmptyTitle,
+    EmptyDescription,
+    EmptyContent,
+    EmptyMedia,
+} from "./ui/empty";
 import {
     Pagination,
     PaginationContent,
@@ -12,6 +22,21 @@ import {
     PaginationNext,
     PaginationEllipsis,
 } from "./ui/pagination";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
+
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 
  type EntityHeaderProps =  {
     title : string;
@@ -242,3 +267,250 @@ export const EntityPagination = ({
         </div>
     );
 }; 
+
+
+
+interface StateViewProps {
+    message ?: string;
+};
+
+interface LoadingViewProps extends StateViewProps {
+    entity ?: string;
+}
+
+export const LoadingView = ({
+    entity = "items",
+    message
+}: LoadingViewProps) => {
+    return (
+        <div className="flex flex-col items-center justify-center py-12 md:py-20">
+            <Loader2Icon className="w-10 h-10 md:w-12 md:h-12 text-primary animate-spin" />
+            <p className="mt-6 text-sm md:text-base text-muted-foreground text-center">
+                {message ?? `Loading ${entity}...`}
+            </p>
+        </div>
+    );
+};
+
+interface ErrorViewProps extends StateViewProps {
+    entity ?: string;
+    onRetry ?: () => void;
+}
+
+export const ErrorView = ({
+    entity = "items",
+    message,
+    onRetry
+}: ErrorViewProps) => {
+    return (
+        <div className="flex flex-col items-center justify-center py-12 md:py-20">
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+                <AlertCircleIcon className="w-7 h-7 md:w-8 md:h-8 text-destructive" />
+            </div>
+            <p className="mt-6 text-sm md:text-base text-muted-foreground text-center max-w-md">
+                {message ?? `Failed to load ${entity}`}
+            </p>
+            {onRetry && (
+                <Button
+                    onClick={onRetry}
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                >
+                    Try again
+                </Button>
+            )}
+        </div>
+    );
+};
+
+interface EmptyViewProps {
+    entity?: string;
+    title?: string;
+    description?: string;
+    onNew?: () => void;
+}
+
+export const EmptyView = ({
+    entity = "items",
+    title,
+    description,
+    onNew
+}: EmptyViewProps) => {
+    return (
+        <Empty>
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    <InboxIcon className="size-5 text-muted-foreground" />
+                </EmptyMedia>
+                <EmptyTitle>
+                    {title ?? `No ${entity} found`}
+                </EmptyTitle>
+            </EmptyHeader>
+            {description && (
+                <EmptyDescription>
+                    {description}
+                </EmptyDescription>
+            )}
+            {onNew && (
+                <EmptyContent>
+                    <Button onClick={onNew}>
+                        Create new
+                    </Button>
+                </EmptyContent>
+            )}
+        </Empty>
+    );
+};
+
+interface EmptyListProps {
+    message?: string;
+    className?: string;
+}
+
+export const EmptyList = ({
+    message = "No results found",
+    className
+}: EmptyListProps) => {
+    return (
+        <div
+            className={cn(
+                "flex flex-col items-center justify-center py-12 text-center",
+                className
+            )}
+        >
+            <InboxIcon className="w-12 h-12 text-muted-foreground/50 mb-3" />
+            <p className="text-sm text-muted-foreground">{message}</p>
+        </div>
+    );
+};
+
+
+interface EntityListProps<T> {
+    items : T[];
+    renderItem : (item : T, index : number) => React.ReactNode;
+    getKey ?: (item : T , index : number ) => string | number;
+    emptyView?: React.ReactNode;
+    className?: string;
+}
+
+export function EntityList<T>({
+    items,
+    renderItem,
+    getKey,
+    emptyView = <EmptyList />,
+    className,
+}: EntityListProps<T>) {
+    if (items.length === 0) {
+        return <div className={cn("w-full", className)}>{emptyView}</div>;
+    }
+
+    return (
+        <div className={cn("grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", className)}>
+            {items.map((item, index) => (
+                <React.Fragment key={getKey?.(item, index) ?? index}>
+                    {renderItem(item, index)}
+                </React.Fragment>
+            ))}
+        </div>
+    );
+}
+
+
+interface EntityItemProps {
+    href: string;
+    title: string;
+    subtitle?: React.ReactNode;
+    image?: React.ReactNode;
+    actions?: React.ReactNode;
+    onRemove?: () => void | Promise<void>;
+    isRemoving?: boolean;
+    className?: string;
+}
+
+export const EntityItem = ({
+    href,
+    title,
+    subtitle,
+    image,
+    actions,
+    onRemove,
+    isRemoving,
+    className
+}: EntityItemProps) => {
+    const handleRemove = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            await onRemove?.();
+        } catch (error) {
+            // Error is handled by the onRemove callback
+        }
+    };
+
+    return (
+        <Link href={href} prefetch className="block group">
+            <Card
+                className={cn(
+                    "group relative transition-all duration-200",
+                    "hover:shadow-lg hover:border-primary/50 hover:-translate-y-0.5",
+                    "active:scale-[0.98]",
+                    className
+                )}
+            >
+                <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-2.5">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                        {image && (
+                            <div className="flex shrink-0 items-center justify-center">
+                                {image}
+                            </div>
+                        )}
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:gap-2">
+                            <CardTitle className="text-sm sm:text-base font-medium leading-snug line-clamp-2 break-words group-hover:underline">
+                                {title}
+                            </CardTitle>
+                            {subtitle && (
+                                <CardDescription className="truncate text-xs sm:text-sm text-muted-foreground/80">
+                                    {subtitle}
+                                </CardDescription>
+                            )}
+                        </div>
+                        {onRemove && (
+                            <div className="flex shrink-0 items-center">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            className="opacity-0 group-hover/card:opacity-100 transition-opacity -mr-2"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <MoreHorizontal className="size-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                        <DropdownMenuItem
+                                            onClick={handleRemove}
+                                            className="text-destructive focus:text-destructive cursor-pointer"
+                                        >
+                                            <Trash2Icon className="size-4 mr-2" />
+                                            {isRemoving ? "Removing..." : "Remove"}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
+                    </div>
+                </CardHeader>
+                {actions && (
+                    <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
+                        <div className="mt-2 pt-2 sm:mt-3 sm:pt-2.5 border-t border-border/50">
+                            <div className="flex flex-wrap gap-2">
+                                {actions}
+                            </div>
+                        </div>
+                    </CardContent>
+                )}
+            </Card>
+        </Link>
+    );
+};

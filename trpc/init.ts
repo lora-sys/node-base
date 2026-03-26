@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { polarClient } from "@/lib/polar";
 import { customerTaxIdFromJSON } from "@polar-sh/sdk/models/components/customer.js";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { CopyX } from "lucide-react";
+import superjson from "superjson";
 
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
@@ -17,7 +17,9 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
 const t = initTRPC
 	.context<Awaited<ReturnType<typeof createTRPCContext>>>()
-	.create({});
+	.create({
+    transformer: superjson,
+  });
 
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;

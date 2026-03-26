@@ -132,7 +132,11 @@ export function ResetPasswordForm({
 						</Link>
 					</Button>
 				}
-			/>
+			>
+				<div className="text-center text-sm text-muted-foreground">
+					The password reset link you used is invalid or has expired. Please request a new one.
+				</div>
+			</AuthCard>
 		);
 	}
 

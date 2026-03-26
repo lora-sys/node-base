@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-+import { auth } from "@/lib/auth";
-+import { headers as getHeaders } from "next/headers";
+import { auth } from "@/lib/auth";
+import { headers as getHeaders } from "next/headers";
 import {
   sendEmail,
   sendVerificationEmail,

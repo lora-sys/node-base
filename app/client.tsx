@@ -5,7 +5,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const Client = () => {
   const trpc = useTRPC();
-  const { data: workflows } = useSuspenseQuery(trpc.getWorkflows.queryOptions());
+  const { data: workflows } = useSuspenseQuery(trpc.workflows.getMany.queryOptions({ page: 1, pageSize: 10, search: "" }));
 
   return <div>client components: {JSON.stringify(workflows)}</div>;
 };
